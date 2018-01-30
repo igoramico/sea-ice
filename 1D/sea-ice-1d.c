@@ -2,10 +2,16 @@
 #include <stdlib.h>
 #include <math.h>
 #include <string.h>
+#include <time.h>
 
 #define L 1000
 
 void compute_fR (double *h, double *w, double *fR);
+
+void compute_fR (double *h, double *w, double *fR);
+
+void compute_fR (double *h, double *w, double *fR);
+
 
 int main (int argc, char **argv) {
 
@@ -55,18 +61,17 @@ int main (int argc, char **argv) {
 
 #ifdef INIT_PONDS_NONE
     for(i=0;i<L;i++) {
-
       w[i] = 0.0;
-
     }
 #endif 
 
 #ifdef INIT_PONDS_RANDOM
-    while(init_ponds_volume>0.0) {
+    while(ponds_volume>0.0) {
       r = drand48();
       i = (int)floor(r*L);
       r = drand48();
-      /* to be continued */
+      w[i] = r*subvolume;
+      ponds_volume -= w[i];
     }
 #endif
 
@@ -114,14 +119,39 @@ void compute_fR (double *h, double *w, double *fR) {
 
   int j;
 
-#ifdef NO_MELT_PONDS
+#ifdef MELT_PONDS
+
+  
+#else
   for(j=0;j<L;j++) {
-    fR[j] = fRin; 
+    if(h[j]>hmin) {
+     fR[j] = S/h[j]; 
+    } else {
+      fR[j]=0.0;
+    }
   }
 #endif
 
-#ifdef EISENMANN_WETTLAUFER
-
-#endif 
-
 }
+
+void compute_sigma (double *sigma) {
+
+  int j;
+
+  for(j=0;j<L;j++) {
+  sigma[j] = sigma0*drand48();
+  }
+  
+}
+
+void compute_psi (double *h, double *w, double *psi) {
+
+  int j,jp,jm;
+  
+  for(j=0;j<L;j++) {
+   jp = (j+1+L)%L;
+   jm = (j-1+L)%L;
+   psi[j] = 0.5*(sigma[jp] - sigma[jm]);
+  }
+  
+}  
