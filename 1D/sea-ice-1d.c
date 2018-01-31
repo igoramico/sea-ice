@@ -8,16 +8,17 @@
 
 void compute_fR (double *h, double *w, double *fR);
 
-void compute_fR (double *h, double *w, double *fR);
+void compute_sigma (double *h, double *w, double *fR);
 
-void compute_fR (double *h, double *w, double *fR);
+void compute_psi (double *h, double *w, double *fR);
 
 
 int main (int argc, char **argv) {
 
   int    i,ip,im;
   double *h,*w;
-  double *flux,*fR,*s,*psi;
+  double *flux,*fR,*s;
+  double *sigma,*psi;
   double *hrhs,*wrhs;
   double *hrhsold,*wrhsold;
 
@@ -59,6 +60,8 @@ int main (int argc, char **argv) {
     }
 #endif
 
+#ifdef MELT_PONDS /* ponds included */
+    
 #ifdef INIT_PONDS_NONE
     for(i=0;i<L;i++) {
       w[i] = 0.0;
@@ -75,17 +78,24 @@ int main (int argc, char **argv) {
     }
 #endif
 
+#endif /* ifdef MELT_PONDS */
+    
    /*** evaluate rhs's ***/
 
+    compute_fR(h,w,fR);
+    compute_sigma(h,w,sigma);
+    compute_psi(h,w,psi);
+    
    for(i=0;i<L;i++) {
 
      ip = (i+1+L)%L;
      im = (i-1+L)%L;
 
      hrhs[i] = -fR[i] + psi[i];
+#ifdef MELT_PONDS
      flux[i] = 0.5*(w[i]*(u[ip]-u[im])+u[i]*(w[ip]-w[im]));
      wrhs[i] = fR[i] - s[i] - flux[i];
-
+#endif
    }
 
    /*** time marching ***/
@@ -93,18 +103,25 @@ int main (int argc, char **argv) {
    for(i=0;i<L;i++) {
 
      h[i] = h[i] + 1.5*hrhs[i] - 0.5*hrhsold[i];
+#ifdef MELT_PONDS
      w[i] = w[i] + 1.5*wrhs[i] - 0.5*wrhsold[i];
-
+#endif
+     
      hrhsold[i] = hrhs[i];
+#ifdef MELT_PONDS
      wrhsold[i] = wrhs[i];
-
+#endif
    }
 
    if((time%printfreq)==0) {
      sprintf(fname,"%s_t%d.dat",basename,time);
      fout = fopen(fname,"w");
      for(i=0;i<L;i++) {
+#ifdef MELT_PONDS
        fprintf(fout," %d %g %g \n",i,h[i],w[i]);
+#else
+       fprintf(fout," %d %g \n",i,h[i]);
+#endif       
      }
      fclose(fout);
    }
@@ -134,7 +151,7 @@ void compute_fR (double *h, double *w, double *fR) {
 
 }
 
-void compute_sigma (double *sigma) {
+void compute_sigma (double *h, double *w, double *sigma) {
 
   int j;
 
