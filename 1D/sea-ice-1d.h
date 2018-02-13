@@ -1,31 +1,6 @@
 #include <time.h>
 #include "variables.h"
 
-/*
-double Der (double *h, int pos, int order) {
-
-  double y;
-
-  switch(order) {
-   case 1: 
-     y = (-h[(pos+2)] + 8.*h[(pos+1)] - 8.*h[(pos-1)] + h[(pos-2)])/12.;
-     break;
-   case 2:
-     y = (-h[(pos+2)] + 16.*h[(pos+1)] - 30.*h[pos] + 16.*h[(pos-1)] - h[(pos-2)])/12.;
-     break;
-   case 3:
-     y = (-h[(pos+3)] + 8.*h[(pos+2)] - 13.*h[(pos+1)] + 13.*h[(pos-1)] - 8.*h[(pos-2)] + h[(pos-3)])/8.;
-     break;
-   case 4:
-     y = (-h[(pos+3)] + 12.*h[(pos+2)] - 39.*h[(pos+1)] + 56.*h[pos] - 39.*h[(pos-1)] + 12.*h[(pos-2)] - h[(pos-3)])/6.;
-     break;
-  }
-
-  return y;
-
-}
-*/
-
 double gasdev() {
 
   static int iset=0;
@@ -49,12 +24,12 @@ double gasdev() {
   }
 }
 
-void dump_config (int t, char name[], double *h) {
+void dump_config (int t, char basename[], double *h) {
 
   FILE *fout;
   char filename[500];
 
-  sprintf(filename,"%s/%s_config_t%d",OutDir,name,t);
+  sprintf(filename,"%s/%s_config_t%d",OutDir,basename,t);
   fout = fopen(filename,"wb");
   if(fout==NULL) { fprintf(stderr,"Error! File %s could not be opened! \n",filename); exit(2); }
   fwrite(h,sizeof(double),L,fout);
@@ -62,13 +37,13 @@ void dump_config (int t, char name[], double *h) {
   
 }
 
-void restore_config (int t, char name[], double *h) {
+void restore_config (int t, char basename[], double *h) {
 
   FILE *fout;
   char filename[500];
   int status;
 
-  sprintf(filename,"%s/%s_config_t%d",OutDir,name,t);
+  sprintf(filename,"%s/%s_config_t%d",OutDir,basename,t);
   fout = fopen(filename,"rb");
   if(fout==NULL) { fprintf(stderr,"Error! File %s could not be opened! \n",filename); exit(2); }
   status = fread(h,sizeof(double),L,fout);
@@ -85,7 +60,6 @@ void restore_config (int t, char name[], double *h) {
 #ifdef MELT_PONDS
 void initialisation (double *h, double *w) {
 
-  int i;
 
 }
 #else
@@ -127,6 +101,7 @@ void initialisation (double *h) {
 #endif
 
 
+/*
 void bc (double *h) {
 
 #ifdef BC_PERIODIC 
@@ -140,17 +115,16 @@ void bc (double *h) {
 #endif
 
 }
+*/
 
 #ifdef MELT_PONDS
 void compute_fR (double *h, double *w, double *fR) {
 
-  int j;
-
-  for(j=0;j<L;j++) {
+  for(i=0;i<L;i++) {
     if(h[j]>hmin) {
-     fR[j] = S/h[j]; 
+     fR[i] = S/h[i]; 
     } else {
-      fR[j]=0.0;
+      fR[i]=0.0;
     }
   }
 
@@ -158,13 +132,11 @@ void compute_fR (double *h, double *w, double *fR) {
 #else
 void compute_fR (double *h, double *fR) {
 
-  int j;
-
-  for(j=0;j<L;j++) {
-    if(h[j]>hmin) {
-     fR[j] = S/h[j]; 
+  for(i=0;i<L;i++) {
+    if(h[i]>hmin) {
+     fR[i] = S/h[i]; 
     } else {
-      fR[j]=0.0;
+      fR[i]=0.0;
     }
   }
 
@@ -174,41 +146,25 @@ void compute_fR (double *h, double *fR) {
 #ifdef MELT_PONDS
 void compute_sigma (double *h, double *w, double *sigma) {
 
-  int j;
-
-  for(j=0;j<L;j++) {
-  sigma[j] = sigma0*gasdev();
+  for(i=0;i<L;i++) {
+  sigma[i] = sigma0*gasdev();
   }
   
 }
 #else
 void compute_sigma (double *h, double *sigma) {
 
-  int j;
 
-  for(j=0;j<L;j++) {
-  sigma[j] = sigma0*gasdev();
+  for(i=0;i<L;i++) {
+  sigma[i] = sigma0*gasdev();
   }
   
 }
 #endif
 
-void compute_psi (double *h, double *w, double *psi) {
-
-  int j,jp,jm;
-  
-  for(j=0;j<L;j++) {
-   jp = (j+1+L)%L;
-   jm = (j-1+L)%L;
-   psi[j] = 0.5*(sigma[jp] - sigma[jm]);
-  }
-  
-}  
-
 
 void compute_hrhs (double *fR, double *psi, double *hrhs) {
 
-  int i;
 
   for(i=0;i<L;i++) {
 
@@ -221,7 +177,6 @@ void compute_hrhs (double *fR, double *psi, double *hrhs) {
 #ifdef MELT_PONDS
 void compute_wrhs (double *fR, double *flux, double *s, double *wrhs) {
 
-  int i;
 
   for(i=0;i<L;i++) {
 
@@ -234,8 +189,6 @@ void compute_wrhs (double *fR, double *flux, double *s, double *wrhs) {
 
 void compute_psi (double *sigma, double *psi) {
 
-  int i,ip,im;
-
   for(i=0;i<L;i++) {
 
     ip = (i + 1 + L)%L;
@@ -243,6 +196,8 @@ void compute_psi (double *sigma, double *psi) {
 
     psi[i] = 0.5 * (sigma[ip] - sigma[im]); 
 
+  }
+  
 }
 
 #ifdef MELT_PONDS
@@ -265,7 +220,6 @@ void time_marching (double *h, double *rhs, double *rhsold) {
 
 void total_volume (int t, double *h, FILE *fvol) {
 
-  int i;
   double vol;
 
   vol = 0.0;
@@ -276,6 +230,7 @@ void total_volume (int t, double *h, FILE *fvol) {
 
 }
 
+/*
 void stabiliser (double *h) {
 
   int i;
@@ -287,13 +242,14 @@ void stabiliser (double *h) {
   }
 
 }
-
-void print_f (int t, double *h, char name[]) {
+*/
+ 
+void print_f (int t, double *h, char basename[]) {
 
   FILE *fout;
   char filename[500];
 
-  sprintf(filename,"%s/%s_t%d.dat",OutDir,name,t);
+  sprintf(filename,"%s/%s_t%d.dat",OutDir,basename,t);
   fout = fopen(filename,"w");
   if(fout==NULL) { fprintf(stderr,"Error! File %s could not be opened! \n",filename); exit(2); }
   
@@ -308,8 +264,6 @@ void print_f (int t, double *h, char name[]) {
 }
 
 void copy_array (double *v1, double *v2, int N) {
-
-  int i;
 
   for(i=0;i<N;i++) {
     v1[i] = v2[i];

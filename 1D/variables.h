@@ -1,6 +1,6 @@
-int i,L;
-int time,NTIME;
-int nnn;
+int i,ip,im;
+int L;
+int iter,NTIME;
 
 int printfreq,volfreq,dumpfreq;
 
@@ -10,30 +10,23 @@ int start_time;
 double dt;
 
 double *h;
-double *Jdet,*Jnoise;
-double *rhs,*rhsold;
-double *Br;
+double *hrhs,*hrhsold;
+double *sigma,*psi;
+double *fR;
 
-double surftens;
-double Temp;
-double cutoff;
+double S,sigma0;
 
-#ifdef DISJOINING
-double Ham1;
-#endif
+double hmin;
 
-#ifdef DISJOINING_CONJOINING
-double Ham1,Ham2;
-#endif 
+int kk,KMIN,KMAX;
+double h0,eps,pert;
+double phi,epsf;
 
-#ifdef INIT_SINE
-int KMIN,KMAX;
-double h0,dh0;
-#endif
-
-#ifdef INIT_RIM
-double hmin,hmax;
-double rim_delta0,rim_delta1,rim_lambda,rim_x0;
+#ifdef MELT_PONDS
+double *w;
+double *wrhs,*wrhsold;
+double *flux;
 #endif
 
 char basename[500],OutDir[500];
+char icename[500],pondname[500];

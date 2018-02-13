@@ -3,18 +3,17 @@
 #include <math.h>
 #include <string.h>
 #include <sys/stat.h>
+#include <time.h>
 
-#include "sea-ice-1d.h"
 #include "variables.h"
+#include "sea-ice-1d.h"
 
-#define L 1000
+typedef struct {
 
-void compute_fR (double *h, double *w, double *fR);
-
-void compute_sigma (double *h, double *w, double *fR);
-
-void compute_psi (double *h, double *w, double *fR);
-
+  char name[500];
+  char value[500];
+  
+} param_type;
 
 int main (int argc, char **argv) {
 
@@ -27,17 +26,8 @@ int main (int argc, char **argv) {
   int status;
   int seed;
 
-  int    i,ip,im;
-  double *h,*w;
-  double *flux,*fR,*s;
-  double *sigma,*psi;
-  double *hrhs,*wrhs;
-  double *hrhsold,*wrhsold;
-
-  int kk,KMIN,KMAX;
-  double h0,eps,pert;
-  double phi,epsf;
-
+  srand48(time(NULL));
+  
   if(argc!=2) {
     fprintf(stderr,"Error! Usage is: %s <input-file> \n",argv[0]);
     exit(2);
@@ -77,7 +67,7 @@ int main (int argc, char **argv) {
     }
     
     if((strcmp("iterations",Parameters[i].name))==0) {
-      NTSTEPS = atoi(Parameters[i].value);
+      NTIME = atoi(Parameters[i].value);
     }
 
     if((strcmp("time_step",Parameters[i].name))==0) {
@@ -127,11 +117,17 @@ int main (int argc, char **argv) {
   h       = (double *)malloc(sizeof(double)*L);
   hrhs    = (double *)malloc(sizeof(double)*L);
   hrhsold = (double *)malloc(sizeof(double)*L);
+  
+  psi     = (double *)malloc(sizeof(double)*L);
+  sigma   = (double *)malloc(sizeof(double)*L);
+  fR      = (double *)malloc(sizeof(double)*L);
 
 #ifdef MELT_PONDS  
   w       = (double *)malloc(sizeof(double)*L);
   wrhs    = (double *)malloc(sizeof(double)*L);
   wrhsold = (double *)malloc(sizeof(double)*L);
+
+  flux    = (double *)malloc(sizeof(double)*L);
 #endif
   
   if(!restore) {
@@ -152,7 +148,7 @@ int main (int argc, char **argv) {
 
   fvol = fopen("total_ice_volume.dat","w");
   
-  for(time=0;time<=NTIME;time++) {
+  for(iter=0;iter<=NTIME;iter++) {
 
    /*** evaluate rhs's ***/
 
@@ -175,14 +171,14 @@ int main (int argc, char **argv) {
     copy_array(wrhsold,wrhs,L);
 #endif
     
-   if((time%printfreq)==0) {
-     print_f(time,h,icename);
+   if((iter%printfreq)==0) {
+     print_f(iter,h,icename);
 #ifdef MELT_PONDS
-     print_f(time,w,pondname);
+     print_f(iter,w,pondname);
 #endif
    }
 
-   total_volume(time,h,fvol);
+   total_volume(iter,h,fvol);
    
   } /* time loop */
 
