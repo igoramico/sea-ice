@@ -1,0 +1,15 @@
+system_size 1000
+initial_height 10.0
+minimum_allowed_height 0.05
+initial_perturbation_amplitude 0.2
+k_min_mode 10
+k_max_mode 40
+time_step 0.001
+iterations 1000000
+Stefan_number 0.1
+mechanical_noise_amplitude 0.5
+dump_frequency 100
+volume_check_frequency 10
+base_file_name_ice_field h
+output_directory OUTPUT
+seed_random_generator 65978

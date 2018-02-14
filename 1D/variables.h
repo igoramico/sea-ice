@@ -19,8 +19,7 @@ double S,sigma0;
 double hmin;
 
 int kk,KMIN,KMAX;
-double h0,eps,pert;
-double phi,epsf;
+double h0,eps;
 
 #ifdef MELT_PONDS
 double *w;

@@ -72,14 +72,24 @@ void initialisation (double *h) {
 #endif
 
 #ifdef INIT_ICE_FOURIER
+    double r,phi;
+    double pert,epsf,epsh0;
+    int NK;
+    double ff=7./8.;
+    
+    epsf  = eps*M_PI;
+    epsh0 = eps*h0;
+
+    NK = KMAX-KMIN+1;
+    
     for(i=0;i<L;i++) {
       pert = 0.0;
       for(kk=KMIN;kk<=KMAX;kk++) {
 	r = drand48();
-	phi = epsf*(2.0*r-1.0);
-	pert += sin(2.0*kk*pi/L+phi);
+	phi = pow(-1.0,kk)*ff*(kk-KMIN)*M_PI/NK;
+	pert += sin((2.0*(double)kk*M_PI*(double)i/((double)L))+phi);
       }
-      h[i] = h0 + eps*pert;
+      h[i] = h0 + epsh0*pert/sqrt(NK);
     }
 #endif
 

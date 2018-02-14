@@ -65,7 +65,19 @@ int main (int argc, char **argv) {
     if((strcmp("system_size",Parameters[i].name))==0) {
       L = atoi(Parameters[i].value);
     }
+
+    if((strcmp("minimum_allowed_height",Parameters[i].name))==0) {
+      hmin = atof(Parameters[i].value);
+    }
+
+    if((strcmp("initial_height",Parameters[i].name))==0) {
+      h0 = atof(Parameters[i].value);
+    }
     
+    if((strcmp("initial_perturbation_amplitude",Parameters[i].name))==0) {
+      eps = atof(Parameters[i].value);
+    }
+
     if((strcmp("iterations",Parameters[i].name))==0) {
       NTIME = atoi(Parameters[i].value);
     }
@@ -73,11 +85,23 @@ int main (int argc, char **argv) {
     if((strcmp("time_step",Parameters[i].name))==0) {
       dt = atof(Parameters[i].value);
     }
-        
+
+    if((strcmp("k_min_mode",Parameters[i].name))==0) {
+      KMIN = atoi(Parameters[i].value);
+    }
+
+    if((strcmp("k_max_mode",Parameters[i].name))==0) {
+      KMAX = atoi(Parameters[i].value);
+    }
+
     if((strcmp("dump_frequency",Parameters[i].name))==0) {
       printfreq = atoi(Parameters[i].value);
     }
 
+    if((strcmp("volume_check_frequency",Parameters[i].name))==0) {
+      volfreq = atoi(Parameters[i].value);
+    }
+    
     if((strcmp("Stefan_number",Parameters[i].name))==0) {
       S = atof(Parameters[i].value);
     }
@@ -111,6 +135,9 @@ int main (int argc, char **argv) {
     }
 
   }
+
+      printf("kmin=%d kmax=%d \n",KMIN,KMAX);
+    
 
   status = mkdir(OutDir, S_IRWXU | S_IRWXG );
 
@@ -150,6 +177,8 @@ int main (int argc, char **argv) {
   
   for(iter=0;iter<=NTIME;iter++) {
 
+    fprintf(stdout,"Starting calculations at iteration #%d...",iter);
+    
    /*** evaluate rhs's ***/
 
  #ifdef MELT_PONDS   
@@ -178,8 +207,12 @@ int main (int argc, char **argv) {
 #endif
    }
 
-   total_volume(iter,h,fvol);
-   
+   if((iter%volfreq)==0) {
+    total_volume(iter,h,fvol);
+   }
+
+   fprintf(stdout,"Done!\n");
+
   } /* time loop */
 
   return 0;
