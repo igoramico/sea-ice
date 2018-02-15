@@ -16,6 +16,8 @@ double *fR;
 
 double S,sigma0,psigma;
 
+int RC;
+
 double hmin;
 
 int kk,KMIN,KMAX;

@@ -7,8 +7,9 @@ k_max_mode 20
 time_step 0.001
 iterations 1000000
 Stefan_number 0.0
-mechanical_noise_amplitude 0.5
+mechanical_noise_amplitude 0.1
 mechanical_noise_kernel_power 2.0
+mechanical_noise_kernel_range 25
 dump_frequency 100
 volume_check_frequency 10
 base_file_name_ice_field h

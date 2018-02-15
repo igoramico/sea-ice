@@ -176,15 +176,14 @@ void compute_sigma (double *h, double *w, double *sigma) {
 void compute_sigma (double *h, double *sigma) {
 
 #ifdef MECHANICAL_CORRELATED
-  int j,ij,dij;
+  int j,irc;
 
   for(i=0;i<L;i++) {
     sigma[i]=0.0;
-    for(j=0;j<L;j++) {
-      if(j!=i) {
-	ij = abs(i-j);
-	dij = (ij<L/2)?(ij):(L-ij);
-        sigma[i] += sigma0*drand48()*h[i]*h[j]/pow(dij,psigma);
+    for(j=-RC;j<=RC;j++) {
+      if(j!=0) {
+	irc = (i+j+L)%L;
+        sigma[i] += sigma0*drand48()*h[i]*h[irc]/pow(abs(j),psigma);
       }
     }
   }
@@ -229,11 +228,15 @@ void compute_psi (double *sigma, double *psi) {
 
   for(i=0;i<L;i++) {
 
-    ip = (i + 1 + L)%L;
-    im = (i - 1 + L)%L;
+    if(h[i]>hmin) {     
+     ip = (i + 1 + L)%L;
+     im = (i - 1 + L)%L;
 
-    psi[i] = 0.5 * (sigma[ip] - sigma[im]); 
-
+     psi[i] = 0.5 * (sigma[ip] - sigma[im]); 
+    } else {
+      psi[i] = 0.0;
+    }
+    
   }
   
 }
