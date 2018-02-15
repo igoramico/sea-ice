@@ -64,16 +64,24 @@ void initialisation (double *h, double *w) {
 }
 #else
 void initialisation (double *h) {
+
+  double r,epsh0;
   
 #ifdef INIT_ICE_RANDOM
+
+  epsh0 = eps*h0;
+
     for(i=0;i<L;i++) {
-      /* to be continued */
+      r = (2.0*drand48() - 1.0);
+      h[i] = h0 + epsh0*r;
     }
+
 #endif
 
 #ifdef INIT_ICE_FOURIER
-    double r,phi;
-    double pert,epsf,epsh0;
+
+    double phi;
+    double pert,epsf;
     int NK;
     double ff=7./8.;
     
@@ -91,9 +99,11 @@ void initialisation (double *h) {
       }
       h[i] = h0 + epsh0*pert/sqrt(NK);
     }
+
 #endif
 
 #ifdef INIT_ICE_FROM_INPUT
+
     fin = fopen("init_ice_topography.inp","r");
     if(fin==NULL) {
       fprintf(stderr,"Error! Initial topography file not found!! \n");
@@ -104,6 +114,7 @@ void initialisation (double *h) {
       }
       fclose(fin);
     }
+
 #endif
 
 }
@@ -164,10 +175,27 @@ void compute_sigma (double *h, double *w, double *sigma) {
 #else
 void compute_sigma (double *h, double *sigma) {
 
+#ifdef MECHANICAL_CORRELATED
+  int j,ij,dij;
 
   for(i=0;i<L;i++) {
-  sigma[i] = sigma0*gasdev();
+    sigma[i]=0.0;
+    for(j=0;j<L;j++) {
+      if(j!=i) {
+	ij = abs(i-j);
+	dij = (ij<L/2)?(ij):(L-ij);
+        sigma[i] += sigma0*drand48()*h[i]*h[j]/pow(dij,psigma);
+      }
+    }
   }
+
+#else
+
+  for(i=0;i<L;i++) {
+   sigma[i] = sigma0*gasdev();
+  }
+
+#endif
   
 }
 #endif

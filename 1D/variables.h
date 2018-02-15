@@ -14,7 +14,7 @@ double *hrhs,*hrhsold;
 double *sigma,*psi;
 double *fR;
 
-double S,sigma0;
+double S,sigma0,psigma;
 
 double hmin;
 

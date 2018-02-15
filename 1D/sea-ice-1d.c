@@ -110,6 +110,10 @@ int main (int argc, char **argv) {
       sigma0 = atof(Parameters[i].value);
     }
 
+    if((strcmp("mechanical_noise_kernel_power",Parameters[i].name))==0) {
+      psigma = atof(Parameters[i].value);
+    }
+
     if((strcmp("base_file_name_ice_field",Parameters[i].name))==0) {
       strcpy(icename,Parameters[i].value);
     }
