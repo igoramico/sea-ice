@@ -1,5 +1,7 @@
 int i,ip,im;
-int L;
+int j,jp,jm;
+int idx;
+int LX,LY,TOTSIZE;
 int iter,NTIME;
 
 int printfreq,volfreq,dumpfreq;
@@ -11,7 +13,8 @@ double dt;
 
 double *h;
 double *hrhs,*hrhsold;
-double *sigma,*psi;
+double *psi;
+double *sigmax,*sigmay;
 double *fR;
 
 double S,sigma0,psigma;
@@ -31,3 +34,4 @@ double *flux;
 
 char basename[500],OutDir[500];
 char icename[500],pondname[500];
+
