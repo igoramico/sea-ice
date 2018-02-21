@@ -1,4 +1,5 @@
-system_size 1000
+system_size_x 256
+system_size_y 256
 initial_height 10.0
 minimum_allowed_height 0.05
 initial_perturbation_amplitude 0.05
@@ -10,8 +11,8 @@ Stefan_number 0.0
 mechanical_noise_amplitude 0.1
 mechanical_noise_kernel_power 2.0
 mechanical_noise_kernel_range 25
-dump_frequency 100
-volume_check_frequency 10
+dump_frequency 1000
+volume_check_frequency 1000
 base_file_name_ice_field h
 output_directory OUTPUT
 seed_random_generator 65978

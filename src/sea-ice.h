@@ -32,7 +32,7 @@ void dump_config (int t, char basename[], double *h) {
   sprintf(filename,"%s/%s_config_t%d",OutDir,basename,t);
   fout = fopen(filename,"wb");
   if(fout==NULL) { fprintf(stderr,"Error! File %s could not be opened! \n",filename); exit(2); }
-  fwrite(h,sizeof(double),L,fout);
+  fwrite(h,sizeof(double),(LX*LY),fout);
   fclose(fout);
   
 }
@@ -46,7 +46,7 @@ void restore_config (int t, char basename[], double *h) {
   sprintf(filename,"%s/%s_config_t%d",OutDir,basename,t);
   fout = fopen(filename,"rb");
   if(fout==NULL) { fprintf(stderr,"Error! File %s could not be opened! \n",filename); exit(2); }
-  status = fread(h,sizeof(double),L,fout);
+  status = fread(h,sizeof(double),(LX*LY),fout);
   if(!status) { 
     fprintf(stderr,"Error! File %s could not be read! \n",filename);
    fprintf(stderr,"Restore of dumped configuration aborted!\n");
@@ -66,7 +66,14 @@ void initialisation (double *h, double *w) {
 void initialisation (double *h) {
 
   double r,epsh0;
-  
+
+    for(i=0;i<LX;i++) {
+     for(j=0;j<LY;j++) {
+      idx = j + i*LY;
+      h[idx] = h0;
+     }
+    }
+    
 #ifdef INIT_ICE_RANDOM
 
   epsh0 = eps*h0;
@@ -120,7 +127,7 @@ void initialisation (double *h) {
       }
       fclose(fin);
     }
-
+    }
 #endif
 
 }
@@ -162,17 +169,17 @@ void compute_fR (double *h, double *fR) {
       fR[idx]=0.0;
     }
   }
-
-}
+  }
+}  
 #endif
 
 #ifdef MELT_PONDS
-void compute_sigma (double *h, double *w, double *sigma) {
+void compute_sigma (double *h, double *w, double *sigmax, double *sigmay) {
 
   /*** to be implemented ***/
 }
 #else
-void compute_sigma (double *h, double *sigma) {
+void compute_sigma (double *h, double *sigmax, double *sigmay) {
 
 #ifdef MECHANICAL_CORRELATED
   int ii,jj;
@@ -185,7 +192,7 @@ void compute_sigma (double *h, double *sigma) {
    for(j=0;j<LY;j++) {
      yh = (double)j;
      idx = j + i*LY;
-     sigma[i]=0.0;
+     sigmax[idx]=sigmay[idx]=0.0;
     for(ii=-RC;ii<=RC;ii++) {
       xt = (double)ii;
     for(jj=-RC;jj<=RC;jj++) {
@@ -195,7 +202,8 @@ void compute_sigma (double *h, double *sigma) {
 	irc = (i + ii + LX)%LX;
 	jrc = (j + jj + LY)%LY;
 	idxrc = jrc + irc*LY;
-        sigma[idx] += sigma0*drand48()*h[idx]*h[idxrc]/pow(dist,psigma);
+        sigmax[idx] += sigma0*drand48()*h[idx]*h[idxrc]*(xh-xt)/pow(dist,psigma);
+        sigmay[idx] += sigma0*drand48()*h[idx]*h[idxrc]*(yh-yt)/pow(dist,psigma);
       }
      }
     }
@@ -206,7 +214,8 @@ void compute_sigma (double *h, double *sigma) {
   for(i=0;i<LX;i++) {
    for(j=0;j<LY;j++) {
     idx = j + i*LY;
-    sigma[idx] = sigma0*gasdev();
+    sigmax[idx] = sigma0*gasdev();
+    sigmay[idx] = sigma0*gasdev();
    }
   }
 #endif
@@ -243,7 +252,7 @@ void compute_wrhs (double *fR, double *flux, double *s, double *wrhs) {
 }
 #endif
 
-void compute_psi (double *sigma, double *psi) {
+void compute_psi (double *sigmax, double *sigmay, double *psi) {
 
   int idxp,idxm;
   double dsxdx,dsydy;
@@ -256,13 +265,13 @@ void compute_psi (double *sigma, double *psi) {
      im = (i - 1 + LX)%LX;
      idxp = j + ip*LY;
      idxm = j + im*LY;
-     dsxdx = 0.5 * (sigma[idxp].x - sigma[idxm].x);
+     dsxdx = 0.5 * (sigmax[idxp] - sigmax[idxm]);
 
      jp = (j + 1 + LY)%LY;
      jm = (j - 1 + LY)%LY;
      idxp = jp + i*LY;
      idxm = jm + i*LY;
-     dsydy = 0.5 * (sigma[idxp].y - sigma[idxm].y);
+     dsydy = 0.5 * (sigmay[idxp] - sigmay[idxm]);
 
 
      psi[idx] = dsxdx + dsydy;
@@ -284,11 +293,13 @@ void compute_flux (double *h, double *w, double *flux) {
 void time_marching (double *h, double *rhs, double *rhsold) {
 
 #ifdef ADAMS_BASHFORTH
-  for(i=0;i<L;i++) {
-
-    h[i] = h[i] + 1.5*dt*hrhs[i] - 0.5*dt*hrhsold[i];
+  for(i=0;i<LX;i++) {
+   for(j=0;j<LY;j++) {
+     idx = j + i*LY;
+     h[idx] = h[idx] + 1.5*dt*hrhs[idx] - 0.5*dt*hrhsold[idx];
 
   }
+ }
 #endif
 
 #ifdef CRANK_NICHOLSON
@@ -303,12 +314,13 @@ void total_volume (int t, double *h, FILE *fvol) {
 
   vol = 0.0;
   for(i=0;i<LX;i++) {
-   for(j=0;j<LX;j++) {
+   for(j=0;j<LY;j++) {
      idx = j + i*LY;
     vol += h[idx];
   }
-  fprintf(fvol," %d %g \n",t,vol);
-
+  }
+   fprintf(fvol," %d %g \n",t,vol);
+   fflush(fvol);
 }
 
 /*
@@ -337,7 +349,7 @@ void print_f (int t, double *h, char basename[]) {
   for(i=0;i<LX;i++) {
   for(j=0;j<LY;j++) {
     idx = j + i*LY;
-    fprintf(fout," %g %g \n",((double)i),((double)j),h[idx]);
+    fprintf(fout," %g %g %g \n",((double)i),((double)j),h[idx]);
 
   }
   fprintf(fout,"\n");

@@ -6,7 +6,7 @@
 #include <time.h>
 
 #include "variables.h"
-#include "sea-ice-1d.h"
+#include "sea-ice.h"
 
 typedef struct {
 
@@ -14,6 +14,7 @@ typedef struct {
   char value[500];
   
 } param_type;
+
 
 int main (int argc, char **argv) {
 
@@ -62,8 +63,12 @@ int main (int argc, char **argv) {
 
   for(i=0;i<nparam;i++) {
 
-    if((strcmp("system_size",Parameters[i].name))==0) {
-      L = atoi(Parameters[i].value);
+    if((strcmp("system_size_x",Parameters[i].name))==0) {
+      LX = atoi(Parameters[i].value);
+    }
+
+    if((strcmp("system_size_y",Parameters[i].name))==0) {
+      LY = atoi(Parameters[i].value);
     }
 
     if((strcmp("minimum_allowed_height",Parameters[i].name))==0) {
@@ -144,25 +149,25 @@ int main (int argc, char **argv) {
 
   }
 
-      printf("kmin=%d kmax=%d \n",KMIN,KMAX);
-    
-
+  TOTSIZE = LX*LY;
+  
   status = mkdir(OutDir, S_IRWXU | S_IRWXG );
 
-  h       = (double *)malloc(sizeof(double)*L);
-  hrhs    = (double *)malloc(sizeof(double)*L);
-  hrhsold = (double *)malloc(sizeof(double)*L);
+  h       = (double *)malloc(sizeof(double)*TOTSIZE);
+  hrhs    = (double *)malloc(sizeof(double)*TOTSIZE);
+  hrhsold = (double *)malloc(sizeof(double)*TOTSIZE);
   
-  psi     = (double *)malloc(sizeof(double)*L);
-  sigma   = (double *)malloc(sizeof(double)*L);
-  fR      = (double *)malloc(sizeof(double)*L);
+  psi     = (double *)malloc(sizeof(double)*TOTSIZE);
+  sigmax  = (double *)malloc(sizeof(double)*TOTSIZE);
+  sigmay  = (double *)malloc(sizeof(double)*TOTSIZE);
+  fR      = (double *)malloc(sizeof(double)*TOTSIZE);
 
 #ifdef MELT_PONDS  
-  w       = (double *)malloc(sizeof(double)*L);
-  wrhs    = (double *)malloc(sizeof(double)*L);
-  wrhsold = (double *)malloc(sizeof(double)*L);
+  w       = (double *)malloc(sizeof(double)*TOTSIZE);
+  wrhs    = (double *)malloc(sizeof(double)*TOTSIZE);
+  wrhsold = (double *)malloc(sizeof(double)*TOTSIZE);
 
-  flux    = (double *)malloc(sizeof(double)*L);
+  flux    = (double *)malloc(sizeof(double)*TOTSIZE);
 #endif
   
   if(!restore) {
@@ -181,7 +186,7 @@ int main (int argc, char **argv) {
     */
   }
 
-  fvol = fopen("total_ice_volume.dat","w");
+  fvol = fopen("total_ice_volume.dat","a");
   
   for(iter=0;iter<=NTIME;iter++) {
 
@@ -191,21 +196,21 @@ int main (int argc, char **argv) {
 
  #ifdef MELT_PONDS   
     compute_fR(h,w,fR);
-    compute_sigma(h,w,sigma);
+    compute_sigma(h,w,sigmax,sigmay);
  #else
     compute_fR(h,fR);
-    compute_sigma(h,sigma);
+    compute_sigma(h,sigmax,sigmay);
  #endif
-    compute_psi(sigma,psi);
+    compute_psi(sigmax,sigmay,psi);
     compute_hrhs(fR,psi,hrhs);
 #ifdef MELT_PONDS
     compute_wrhs(fR,flux,s,wrhs);
     time_marching(w,wrhs,wrhsold);
 #endif    
     time_marching(h,hrhs,hrhsold);
-    copy_array(hrhsold,hrhs,L);
+    copy_array(hrhsold,hrhs,TOTSIZE);
 #ifdef MELT_PONDS
-    copy_array(wrhsold,wrhs,L);
+    copy_array(wrhsold,wrhs,TOTSIZE);
 #endif
     
    if((iter%printfreq)==0) {
@@ -223,6 +228,8 @@ int main (int argc, char **argv) {
 
   } /* time loop */
 
+  fclose(fvol);
+  
   return 0;
 
 }
