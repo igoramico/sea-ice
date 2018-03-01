@@ -147,6 +147,22 @@ int main (int argc, char **argv) {
       seed = atoi(Parameters[i].value);
     }
 
+#ifdef MELT_PONDS
+
+    if((strcmp("melt_ponds_alpha1_flux",Parameters[i].name))==0) {
+      alpha1 = atof(Parameters[i].value);
+    }
+
+    if((strcmp("melt_ponds_alphad_lateral_drainage",Parameters[i].name))==0) {
+      alphad = atof(Parameters[i].value);
+    }
+
+    if((strcmp("melt_ponds_kappa_seepage",Parameters[i].name))==0) {
+      kappa = atof(Parameters[i].value);
+    }
+
+#endif 
+
   }
 
   TOTSIZE = LX*LY;
@@ -167,7 +183,10 @@ int main (int argc, char **argv) {
   wrhs    = (double *)malloc(sizeof(double)*TOTSIZE);
   wrhsold = (double *)malloc(sizeof(double)*TOTSIZE);
 
-  flux    = (double *)malloc(sizeof(double)*TOTSIZE);
+  fluxx   = (double *)malloc(sizeof(double)*TOTSIZE);
+  fluxy   = (double *)malloc(sizeof(double)*TOTSIZE);
+
+  s       = (double *)malloc(sizeof(double)*TOTSIZE);
 #endif
   
   if(!restore) {
@@ -178,12 +197,23 @@ int main (int argc, char **argv) {
 #endif    
     fprintf(stdout,"Configuration successfully initialised! \n");
   } else {
-    /*
     restore_config(start_time,"h",h);
-    restore_config(start_time,"rhs",rhs);
-    restore_config(start_time,"rhsold",rhsold);
+    restore_config(start_time,"hrhs",hrhs);
+#ifndef RUNGE_KUTTA
+    restore_config(start_time,"hrhsold",hrhsold);
+#endif
+
+#ifdef MELT_PONDS 
+
+    restore_config(start_time,"w",w);
+    restore_config(start_time,"wrhs",wrhs);
+#ifndef RUNGE_KUTTA
+    restore_config(start_time,"wrhsold",wrhsold);
+#endif
+
+#endif
+
     fprintf(stdout,"Configuration successfully restored from a dump at t=%d! \n",start_time);
-    */
   }
 
   fvol = fopen("total_ice_volume.dat","a");
@@ -194,24 +224,34 @@ int main (int argc, char **argv) {
     
    /*** evaluate rhs's ***/
 
+#ifdef RUNGE_KUTTA
+
+    /* Runge-Kutta time marching to be implemented... */
+
+#else /* else time marching */
+
  #ifdef MELT_PONDS   
     compute_fR(h,w,fR);
-    compute_sigma(h,w,sigmax,sigmay);
+    //    compute_sigma(h,w,sigmax,sigmay);
  #else
     compute_fR(h,fR);
-    compute_sigma(h,sigmax,sigmay);
+    //    compute_sigma(h,sigmax,sigmay);
  #endif
+    compute_sigma(h,sigmax,sigmay);
     compute_psi(sigmax,sigmay,psi);
     compute_hrhs(fR,psi,hrhs);
-#ifdef MELT_PONDS
-    compute_wrhs(fR,flux,s,wrhs);
+
+ #ifdef MELT_PONDS
+    compute_wrhs(fR,fluxx,fluxy,s,wrhs);
     time_marching(w,wrhs,wrhsold);
-#endif    
+ #endif    
     time_marching(h,hrhs,hrhsold);
     copy_array(hrhsold,hrhs,TOTSIZE);
-#ifdef MELT_PONDS
+ #ifdef MELT_PONDS
     copy_array(wrhsold,wrhs,TOTSIZE);
-#endif
+ #endif
+
+#endif /* endif time marching */
     
    if((iter%printfreq)==0) {
      print_f(iter,h,icename);

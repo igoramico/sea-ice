@@ -29,7 +29,11 @@ double h0,eps;
 #ifdef MELT_PONDS
 double *w;
 double *wrhs,*wrhsold;
-double *flux;
+double *fluxx,*fluxy;
+double *s;
+double *tsx,*tsy;
+
+double alpha1,alphad,kappa;
 #endif
 
 char basename[500],OutDir[500];

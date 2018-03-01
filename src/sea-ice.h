@@ -60,6 +60,73 @@ void restore_config (int t, char basename[], double *h) {
 #ifdef MELT_PONDS
 void initialisation (double *h, double *w) {
 
+  double r,epsh0;
+
+    for(i=0;i<LX;i++) {
+     for(j=0;j<LY;j++) {
+      idx = j + i*LY;
+      h[idx] = h0;
+      w[idx] = 0.0;
+     }
+    }
+
+#ifdef INIT_ICE_RANDOM
+
+  epsh0 = eps*h0;
+
+    for(i=0;i<LX;i++) {
+     for(j=0;j<LY;j++) {
+      idx = j + i*LY;
+      r = (2.0*drand48() - 1.0);
+      h[idx] = h0 + epsh0*r;
+     }
+    }
+#endif
+
+
+#ifdef INIT_ICE_FOURIER
+
+    double phi;
+    double pert,epsf;
+    int NK;
+    double ff=7./8.;
+    
+    epsf  = eps*M_PI;
+    epsh0 = eps*h0;
+
+    NK = KMAX-KMIN+1;
+    
+    for(i=0;i<LX;i++) {
+     for(j=0;j<LY;j++) {
+       idx = j + i*LY;
+      pert = 0.0;
+      for(kk=KMIN;kk<=KMAX;kk++) {
+	r = drand48();
+	phi = pow(-1.0,kk)*ff*(kk-KMIN)*M_PI/NK;
+	pert += sin((2.0*(double)kk*M_PI*(double)i/((double)LX))+phi)*sin((2.0*(double)kk*M_PI*(double)j/((double)LY))+phi);
+      }
+      h[idx] = h0 + epsh0*pert/sqrt(NK);
+     }
+    }
+#endif
+
+
+#ifdef INIT_ICE_FROM_INPUT
+
+    fin = fopen("init_ice_topography.inp","r");
+    if(fin==NULL) {
+      fprintf(stderr,"Error! Initial topography file not found!! \n");
+      exit(2);
+    } else {
+      for(i=0;i<LX;i++) {
+       for(j=0;j<LY;j++) {
+	 idx = j + i*LY;
+	fscanf(fin,"%lf",&h[idx]);
+      }
+      fclose(fin);
+    }
+    }
+#endif
 
 }
 #else
@@ -154,7 +221,22 @@ void bc (double *h) {
 #ifdef MELT_PONDS
 void compute_fR (double *h, double *w, double *fR) {
 
-  /*** to be implemented ***/
+#ifdef FR_LUETHJE_ET_AL
+  for(i=0;i<LX;i++) {
+   for(j=0;j<LY;j++) {
+     idx = j + i*LY;
+     if(h[idx]>hmin) {
+      if(w[idx]<wmaxfr) {
+	fR[idx] = (1.0 + mpluethje/mluethje*w[idx]/wmaxfr)*mluethje; 
+       } else {
+	fR[idx] = (1.0 + mpluethje/mluethje)*mluethje; 
+      }
+     } else {
+      fR[idx]=0.0;
+     }
+   }
+  }
+#endif
 
 }
 #else
@@ -173,12 +255,15 @@ void compute_fR (double *h, double *fR) {
 }  
 #endif
 
+/* 
 #ifdef MELT_PONDS
 void compute_sigma (double *h, double *w, double *sigmax, double *sigmay) {
 
-  /*** to be implemented ***/
+  to be implemented
 }
 #else
+*/
+
 void compute_sigma (double *h, double *sigmax, double *sigmay) {
 
 #ifdef MECHANICAL_CORRELATED
@@ -221,7 +306,7 @@ void compute_sigma (double *h, double *sigmax, double *sigmay) {
 #endif
   
 }
-#endif
+//#endif
 
 
 void compute_hrhs (double *fR, double *psi, double *hrhs) {
@@ -238,19 +323,114 @@ void compute_hrhs (double *fR, double *psi, double *hrhs) {
 }
 
 #ifdef MELT_PONDS
-void compute_wrhs (double *fR, double *flux, double *s, double *wrhs) {
 
+void compute_flux (double *h, double *w, double *fluxx, double *fluxy) {
+
+  int idxp,idxm;
+  double dhx,dwx;
+  double dhy,dwy;
 
   for(i=0;i<LX;i++) {
    for(j=0;j<LY;j++) {
+
      idx = j + i*LY;
-    wrhs[idx] = fR[idx] - flux[idx] + s[idx];
+
+     ip = (i + 1 + LX)%LX;
+     im = (i - 1 + LX)%LX;
+     idxp = j + ip*LY;
+     idxm = j + im*LY;
+
+     dhx = 0.5*(h[idxp] - h[idxm]);
+     dwx = 0.5*(w[idxp] - w[idxm]);
+
+     fluxx[idx] = -alpha1*w[idx]*w[idx]*(dhx + dwx);
+
+#ifdef WIND_SHEAR 
+     fluxx[idx] += tsx[idx]*w[idx];
+#endif 
+
+#ifdef LATERAL_DRAINAGE 
+     fluxx[idx] += -alphad*(dhx + dwx);
+#endif 
+
+     jp = (j + 1 + LY)%LY;
+     jm = (j - 1 + LY)%LY;
+     idxp = jp + i*LY;
+     idxm = jm + i*LY;
+
+     dhy = 0.5*(h[idxp] - h[idxm]);
+     dwy = 0.5*(w[idxp] - w[idxm]);
+
+     fluxy[idx] = -alpha1*w[idx]*w[idx]*(dhy + dwy);  
+
+#ifdef WIND_SHEAR 
+     fluxy[idx] += tsy[idx]*w[idx];
+#endif 
+
+#ifdef LATERAL_DRAINAGE 
+     fluxy[idx] += -alphad*(dhy + dwy);
+#endif 
+
+       }
+  }
+
+}  
+
+#ifdef SEEPAGE
+void compute_seepage (double *h, double *w) {
+
+  for(i=0;i<LX;i++) {
+   for(j=0;j<LY;j++) {
+
+     idx = j + i*LY;
+
+     if(h[idx]>hmin) {
+      s[idx] = kappa*w[idx]/h[idx];
+     } else {
+       s[idx] = 0.0;
+     }
+
+   }
+  }
+
+}
+#endif 
+
+
+void compute_wrhs (double *fR, double *fluxx, double *fluxy, double *s, double *wrhs) {
+
+  int idxp,idxm;
+  double dfluxx,dfluxy;
+  double div;
+
+  for(i=0;i<LX;i++) {
+   for(j=0;j<LY;j++) {
+
+     idx = j + i*LY;
+
+     ip = (i + 1 + LX)%LX;
+     im = (i - 1 + LX)%LX;
+     idxp = j + ip*LY;
+     idxm = j + im*LY;
+
+     dfluxx = 0.5*(fluxx[idxp] - fluxx[idxm]);
+
+     jp = (j + 1 + LY)%LY;
+     jm = (j - 1 + LY)%LY;
+     idxp = jp + i*LY;
+     idxm = jm + i*LY;
+
+     dfluxy = 0.5*(fluxy[idxp] - fluxy[idxm]);
+
+     div = dfluxx + dfluxy;
+
+     wrhs[idx] = fR[idx] - div + s[idx];
 
   }
   }
 
 }
-#endif
+#endif /* ifdef melt ponds */
 
 void compute_psi (double *sigmax, double *sigmay, double *psi) {
 
@@ -284,15 +464,25 @@ void compute_psi (double *sigmax, double *sigmay, double *psi) {
   
 }
 
-#ifdef MELT_PONDS
-void compute_flux (double *h, double *w, double *flux) {
+#ifdef CRANK_NICOLSON
   /*** to be implemented ***/
-}  
-#endif
+#elif defined RUNGE_KUTTA
 
+void time_marching (double *h, double *k1, double *k2, double *k3, double *k4) {
+
+  for(i=0;i<LX;i++) {
+   for(j=0;j<LY;j++) {
+     idx = j + i*LY;
+     h[idx] = h[idx] + (1./6.*k1[idx] + 1./3.*k2[idx] + 1./3.*k3[idx] + 1./6.*k4[idx]);
+
+  }
+ }
+
+}
+
+#else
 void time_marching (double *h, double *rhs, double *rhsold) {
 
-#ifdef ADAMS_BASHFORTH
   for(i=0;i<LX;i++) {
    for(j=0;j<LY;j++) {
      idx = j + i*LY;
@@ -300,13 +490,10 @@ void time_marching (double *h, double *rhs, double *rhsold) {
 
   }
  }
-#endif
-
-#ifdef CRANK_NICHOLSON
-  /*** to be implemented ***/
+}
 #endif 
 
-}
+
 
 void total_volume (int t, double *h, FILE *fvol) {
 
