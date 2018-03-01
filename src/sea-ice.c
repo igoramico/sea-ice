@@ -123,6 +123,26 @@ int main (int argc, char **argv) {
       RC = atoi(Parameters[i].value);
     }
 
+    if((strcmp("meltwater_flux_alpha1",Parameters[i].name))==0) {
+      alpha1 = atoi(Parameters[i].value);
+    }
+
+    if((strcmp("meltwater_flux_wind_x",Parameters[i].name))==0) {
+      ts0x = atoi(Parameters[i].value);
+    }
+
+    if((strcmp("meltwater_flux_wind_y",Parameters[i].name))==0) {
+      ts0y = atoi(Parameters[i].value);
+    }
+
+    if((strcmp("vertical_seepage_rate_kappa",Parameters[i].name))==0) {
+      kappa = atoi(Parameters[i].value);
+    }
+
+    if((strcmp("lateral_drainage_rate_alphad",Parameters[i].name))==0) {
+      alphad = atoi(Parameters[i].value);
+    }
+
     if((strcmp("base_file_name_ice_field",Parameters[i].name))==0) {
       strcpy(icename,Parameters[i].value);
     }

@@ -11,6 +11,9 @@ Stefan_number 0.0
 mechanical_noise_amplitude 0.1
 mechanical_noise_kernel_power 2.0
 mechanical_noise_kernel_range 25
+meltwater_flux_alpha1 0.0
+vertical_seepage_rate_kappa 0.0
+lateral_drainage_rate_alphad 0.0 
 dump_frequency 1000
 volume_check_frequency 1000
 base_file_name_ice_field h

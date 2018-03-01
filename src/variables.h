@@ -34,6 +34,7 @@ double *s;
 double *tsx,*tsy;
 
 double alpha1,alphad,kappa;
+double ts0x,ts0y;
 #endif
 
 char basename[500],OutDir[500];
