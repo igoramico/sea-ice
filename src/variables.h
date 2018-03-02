@@ -35,8 +35,12 @@ double *tsx,*tsy;
 
 double alpha1,alphad,kappa;
 double ts0x,ts0y;
+
+double mluethje,mpluethje,wmaxfr;
 #endif
 
 char basename[500],OutDir[500];
 char icename[500],pondname[500];
+char fname[500];
 
+FILE *finp;

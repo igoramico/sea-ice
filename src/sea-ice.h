@@ -62,6 +62,8 @@ void initialisation (double *h, double *w) {
 
   double r,epsh0;
 
+  epsh0 = eps*h0;
+  
     for(i=0;i<LX;i++) {
      for(j=0;j<LY;j++) {
       idx = j + i*LY;
@@ -72,8 +74,6 @@ void initialisation (double *h, double *w) {
 
 #ifdef INIT_ICE_RANDOM
 
-  epsh0 = eps*h0;
-
     for(i=0;i<LX;i++) {
      for(j=0;j<LY;j++) {
       idx = j + i*LY;
@@ -81,9 +81,20 @@ void initialisation (double *h, double *w) {
       h[idx] = h0 + epsh0*r;
      }
     }
+
 #endif
 
+#ifdef INIT_ICE_SINGLEMODE
 
+    for(i=0;i<LX;i++) {
+     for(j=0;j<LY;j++) {
+       idx = j + i*LY;
+       h[idx] = h0 + epsh0*sin((2.0*(double)KMIN*M_PI*(double)i/((double)LX)))*sin((2.0*(double)KMIN*M_PI*(double)j/((double)LY)));
+     }
+    }
+    
+#endif
+    
 #ifdef INIT_ICE_FOURIER
 
     double phi;
@@ -92,7 +103,6 @@ void initialisation (double *h, double *w) {
     double ff=7./8.;
     
     epsf  = eps*M_PI;
-    epsh0 = eps*h0;
 
     NK = KMAX-KMIN+1;
     
@@ -108,32 +118,59 @@ void initialisation (double *h, double *w) {
       h[idx] = h0 + epsh0*pert/sqrt(NK);
      }
     }
+
 #endif
 
 
-#ifdef INIT_ICE_FROM_INPUT
+#ifdef INIT_ICE_FROM_FILE
 
-    fin = fopen("init_ice_topography.inp","r");
-    if(fin==NULL) {
-      fprintf(stderr,"Error! Initial topography file not found!! \n");
+    sprintf("init_ice_topography.inp",fname);
+    finp = fopen(fname,"r");
+    if(finp==NULL) {
+      fprintf(stderr,"Error! Initial topography file %s not found!! \n",fname);
       exit(2);
     } else {
       for(i=0;i<LX;i++) {
        for(j=0;j<LY;j++) {
 	 idx = j + i*LY;
-	fscanf(fin,"%lf",&h[idx]);
+	fscanf(finp,"%lf",&h[idx]);
+       }
       }
-      fclose(fin);
+      fclose(finp);
     }
-    }
+
+
 #endif
 
+#ifdef INIT_MELT_PONDS_FROM_FILE
+
+    sprintf(fname,"init_melt_water_distribution.inp");
+    finp = fopen(fname,"r");
+    if(finp==NULL) {
+      fprintf(stderr,"Error! Initial melt water distribution file '%s' not found!! \n",fname);
+      exit(2);
+    } else {
+      for(i=0;i<LX;i++) {
+       for(j=0;j<LY;j++) {
+	 idx = j + i*LY;
+	fscanf(finp,"%lf",&w[idx]);
+      }
+      }
+     fclose(finp); 
+    }
+
+#endif
+    
 }
+
 #else
+
 void initialisation (double *h) {
 
   double r,epsh0;
 
+  epsh0 = eps*h0;
+  
     for(i=0;i<LX;i++) {
      for(j=0;j<LY;j++) {
       idx = j + i*LY;
@@ -143,8 +180,6 @@ void initialisation (double *h) {
     
 #ifdef INIT_ICE_RANDOM
 
-  epsh0 = eps*h0;
-
     for(i=0;i<LX;i++) {
      for(j=0;j<LY;j++) {
       idx = j + i*LY;
@@ -154,6 +189,17 @@ void initialisation (double *h) {
     }
 #endif
 
+#ifdef INIT_ICE_SINGLEMODE
+
+    for(i=0;i<LX;i++) {
+     for(j=0;j<LY;j++) {
+       idx = j + i*LY;
+       h[idx] = h0 + epsh0*sin((2.0*(double)KMIN*M_PI*(double)i/((double)LX)))*sin((2.0*(double)KMIN*M_PI*(double)j/((double)LY)));
+     }
+    }
+    
+#endif
+    
 #ifdef INIT_ICE_FOURIER
 
     double phi;
@@ -162,7 +208,6 @@ void initialisation (double *h) {
     double ff=7./8.;
     
     epsf  = eps*M_PI;
-    epsh0 = eps*h0;
 
     NK = KMAX-KMIN+1;
     
@@ -182,18 +227,18 @@ void initialisation (double *h) {
 
 #ifdef INIT_ICE_FROM_INPUT
 
-    fin = fopen("init_ice_topography.inp","r");
-    if(fin==NULL) {
+    finp = fopen("init_ice_topography.inp","r");
+    if(finp==NULL) {
       fprintf(stderr,"Error! Initial topography file not found!! \n");
       exit(2);
     } else {
       for(i=0;i<LX;i++) {
        for(j=0;j<LY;j++) {
 	 idx = j + i*LY;
-	fscanf(fin,"%lf",&h[idx]);
+	fscanf(finp,"%lf",&h[idx]);
       }
-      fclose(fin);
     }
+      fclose(finp);
     }
 #endif
 
@@ -221,15 +266,26 @@ void bc (double *h) {
 #ifdef MELT_PONDS
 void compute_fR (double *h, double *w, double *fR) {
 
-#ifdef FR_LUETHJE_ET_AL
+  for(i=0;i<LX;i++) {
+   for(j=0;j<LY;j++) {
+     idx = j + i*LY;
+     fR[idx] = 0.0;
+   }
+  }
+     
+#ifdef MELTING_LUETHJE
   for(i=0;i<LX;i++) {
    for(j=0;j<LY;j++) {
      idx = j + i*LY;
      if(h[idx]>hmin) {
-      if(w[idx]<wmaxfr) {
-	fR[idx] = (1.0 + mpluethje/mluethje*w[idx]/wmaxfr)*mluethje; 
+      if(mluethje!=0.0) {
+       if(w[idx]<wmaxfr) {
+ 	fR[idx] = (1.0 + mpluethje/mluethje*w[idx]/wmaxfr)*mluethje; 
        } else {
 	fR[idx] = (1.0 + mpluethje/mluethje)*mluethje; 
+       }
+      } else {
+	fR[idx] = mluethje;
       }
      } else {
       fR[idx]=0.0;
@@ -245,6 +301,14 @@ void compute_fR (double *h, double *fR) {
   for(i=0;i<LX;i++) {
    for(j=0;j<LY;j++) {
      idx = j + i*LY;
+     fR[idx] = 0.0;
+   }
+  }
+  
+#ifdef MELTING_WETTLAUFER  
+  for(i=0;i<LX;i++) {
+   for(j=0;j<LY;j++) {
+     idx = j + i*LY;
     if(h[idx]>hmin) {
      fR[idx] = S/h[idx]; 
     } else {
@@ -252,7 +316,9 @@ void compute_fR (double *h, double *fR) {
     }
   }
   }
-}  
+#endif
+  
+}
 #endif
 
 /* 
@@ -313,11 +379,10 @@ void compute_hrhs (double *fR, double *psi, double *hrhs) {
 
 
   for(i=0;i<LX;i++) {
-  for(j=0;j<LY;j++) {
+   for(j=0;j<LY;j++) {
     idx = j +i*LY;
     hrhs[idx] = -fR[idx] + psi[idx];
-
-  }
+   }
   }
 
 }
@@ -371,6 +436,11 @@ void compute_flux (double *h, double *w, double *fluxx, double *fluxy) {
      fluxy[idx] += -alphad*(dhy + dwy);
 #endif 
 
+     if(i==128&&j==64) {
+       fprintf(stdout," PROCO %g %g \n",fluxx[idx],fluxy[idx]);
+     }
+
+ 
        }
   }
 
@@ -423,10 +493,8 @@ void compute_wrhs (double *fR, double *fluxx, double *fluxy, double *s, double *
      dfluxy = 0.5*(fluxy[idxp] - fluxy[idxm]);
 
      div = dfluxx + dfluxy;
-
      wrhs[idx] = fR[idx] - div + s[idx];
-
-  }
+   }
   }
 
 }
@@ -482,13 +550,11 @@ void time_marching (double *h, double *k1, double *k2, double *k3, double *k4) {
 
 #else
 void time_marching (double *h, double *rhs, double *rhsold) {
-
   for(i=0;i<LX;i++) {
    for(j=0;j<LY;j++) {
      idx = j + i*LY;
-     h[idx] = h[idx] + 1.5*dt*hrhs[idx] - 0.5*dt*hrhsold[idx];
-
-  }
+     h[idx] = h[idx] + 1.5*dt*rhs[idx] - 0.5*dt*rhsold[idx];
+   }
  }
 }
 #endif 

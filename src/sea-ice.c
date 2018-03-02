@@ -21,7 +21,7 @@ int main (int argc, char **argv) {
   int i,nparam;
   char finput[500];
   char fvolname[500];
-  FILE *fin,*fvol;
+  FILE *fin,*fvol,*fwvol;
   char str[500],value[500];
   param_type *Parameters;  
   int status;
@@ -123,6 +123,20 @@ int main (int argc, char **argv) {
       RC = atoi(Parameters[i].value);
     }
 
+#ifdef MELT_PONDS
+    
+    if((strcmp("melting_luethje_m",Parameters[i].name))==0) {
+      mluethje = atoi(Parameters[i].value);
+    }
+
+    if((strcmp("melting_luethje_mp",Parameters[i].name))==0) {
+      mpluethje = atoi(Parameters[i].value);
+    }
+
+    if((strcmp("melting_luethje_wmax",Parameters[i].name))==0) {
+      wmaxfr = atoi(Parameters[i].value);
+    }
+    
     if((strcmp("meltwater_flux_alpha1",Parameters[i].name))==0) {
       alpha1 = atoi(Parameters[i].value);
     }
@@ -143,12 +157,14 @@ int main (int argc, char **argv) {
       alphad = atoi(Parameters[i].value);
     }
 
-    if((strcmp("base_file_name_ice_field",Parameters[i].name))==0) {
-      strcpy(icename,Parameters[i].value);
-    }
-
     if((strcmp("base_file_name_pond_field",Parameters[i].name))==0) {
       strcpy(pondname,Parameters[i].value);
+    }
+    
+#endif
+    
+    if((strcmp("base_file_name_ice_field",Parameters[i].name))==0) {
+      strcpy(icename,Parameters[i].value);
     }
     
     if((strcmp("output_directory",Parameters[i].name))==0) {
@@ -160,6 +176,9 @@ int main (int argc, char **argv) {
 	restore = 0;
       } else {
 	restore = 1;
+        if((strcmp("start_time",Parameters[i].name))==0) {
+          start_time = atoi(Parameters[i].value);
+        }
       }
     }
 
@@ -210,6 +229,7 @@ int main (int argc, char **argv) {
 #endif
   
   if(!restore) {
+    start_time = 0;
 #ifdef MELT_PONDS
     initialisation(h,w);
 #else
@@ -224,7 +244,6 @@ int main (int argc, char **argv) {
 #endif
 
 #ifdef MELT_PONDS 
-
     restore_config(start_time,"w",w);
     restore_config(start_time,"wrhs",wrhs);
 #ifndef RUNGE_KUTTA
@@ -237,9 +256,28 @@ int main (int argc, char **argv) {
   }
 
   fvol = fopen("total_ice_volume.dat","a");
-  
-  for(iter=0;iter<=NTIME;iter++) {
 
+#ifdef MELT_PONDS
+  fwvol = fopen("total_water_volume.dat","a");
+#endif
+  
+  for(iter=start_time;iter<=(start_time+NTIME);iter++) {
+
+   if((iter%printfreq)==0) {
+     print_f(iter,h,icename);
+#ifdef MELT_PONDS
+     print_f(iter,w,pondname);
+#endif
+   }
+
+   if((iter%volfreq)==0) {
+    total_volume(iter,h,fvol);
+#ifdef MELT_PONDS
+    total_volume(iter,w,fwvol);
+#endif    
+   }
+
+    
     fprintf(stdout,"Starting calculations at iteration #%d...",iter);
     
    /*** evaluate rhs's ***/
@@ -262,9 +300,16 @@ int main (int argc, char **argv) {
     compute_hrhs(fR,psi,hrhs);
 
  #ifdef MELT_PONDS
+    compute_flux(h,w,fluxx,fluxy);
     compute_wrhs(fR,fluxx,fluxy,s,wrhs);
+    if(iter==0) {
+      copy_array(wrhsold,wrhs,TOTSIZE);
+    }    
     time_marching(w,wrhs,wrhsold);
- #endif    
+ #endif
+    if(iter==0) {
+      copy_array(hrhsold,hrhs,TOTSIZE);
+    }    
     time_marching(h,hrhs,hrhsold);
     copy_array(hrhsold,hrhs,TOTSIZE);
  #ifdef MELT_PONDS
@@ -273,22 +318,14 @@ int main (int argc, char **argv) {
 
 #endif /* endif time marching */
     
-   if((iter%printfreq)==0) {
-     print_f(iter,h,icename);
-#ifdef MELT_PONDS
-     print_f(iter,w,pondname);
-#endif
-   }
-
-   if((iter%volfreq)==0) {
-    total_volume(iter,h,fvol);
-   }
-
    fprintf(stdout,"Done!\n");
 
   } /* time loop */
 
   fclose(fvol);
+#ifdef MELT_PONDS  
+  fclose(fwvol);
+#endif
   
   return 0;
 
