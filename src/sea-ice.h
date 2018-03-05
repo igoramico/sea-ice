@@ -435,11 +435,6 @@ void compute_flux (double *h, double *w, double *fluxx, double *fluxy) {
 #ifdef LATERAL_DRAINAGE 
      fluxy[idx] += -alphad*(dhy + dwy);
 #endif 
-
-     if(i==128&&j==64) {
-       fprintf(stdout," PROCO %g %g \n",fluxx[idx],fluxy[idx]);
-     }
-
  
        }
   }

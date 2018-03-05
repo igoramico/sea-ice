@@ -138,7 +138,7 @@ int main (int argc, char **argv) {
     }
     
     if((strcmp("meltwater_flux_alpha1",Parameters[i].name))==0) {
-      alpha1 = atoi(Parameters[i].value);
+      alpha1 = atof(Parameters[i].value);
     }
 
     if((strcmp("meltwater_flux_wind_x",Parameters[i].name))==0) {
