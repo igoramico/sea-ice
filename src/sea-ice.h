@@ -389,6 +389,61 @@ void compute_hrhs (double *fR, double *psi, double *hrhs) {
 
 #ifdef MELT_PONDS
 
+#ifdef VOLUMETRIC_FLUXES
+void compute_flux (double *h, double *w, double *Flux) {
+
+  int idxpx,idxmx;
+  int idxpy,idxmy;
+  double wm;
+  double Jpx,Jmx,Jpy,Jmy;
+  
+  for(i=0;i<LX;i++) {
+   for(j=0;j<LY;j++) {
+
+     idx = j + i*LY;
+
+     ip = (i + 1 + LX)%LX;
+     im = (i - 1 + LX)%LX;
+     jp = (j + 1 + LY)%LY;
+     jm = (j - 1 + LY)%LY;
+
+     idxpx = j + ip*LY;
+     idxmx = j + im*LY;
+
+     idxpy = jp + i*LY;
+     idxmy = jm + i*LY;
+
+     wm  = 0.5 * (w[idxpx] + w[idx]);
+     Jpx = alpha1 * wm * wm * (w[idxpx] + h[idxpx] - w[idx] - h[idx]); 
+#ifdef WIND_SHEAR 
+     Jpx -= tsx[idx]*wm; 
+#endif 
+
+     wm  = 0.5 * (w[idxpy] + w[idx]);
+     Jpy = alpha1 * wm * wm * (w[idxpy] + h[idxpy] - w[idx] - h[idx]); 
+#ifdef WIND_SHEAR 
+     Jpy -= tsy[idx]*wm; 
+#endif 
+
+     wm  = 0.5 * (w[idxmy] + w[idx]);
+     Jmy = alpha1 * wm * wm * (w[idxmy] + h[idxmy] - w[idx] - h[idx]); 
+#ifdef WIND_SHEAR 
+     Jmy += tsy[idx]*wm; 
+#endif 
+
+     wm  = 0.5 * (w[idxmx] + w[idx]);
+     Jmx = alpha1 * wm * wm * (w[idxmx] + h[idxmx] - w[idx] - h[idx]); 
+#ifdef WIND_SHEAR 
+     Jmx += tsx[idx]*wm; 
+#endif 
+     
+     Flux[idx] = Jpx + Jpy + Jmx + Jmy;
+     
+   }
+  }
+
+}  
+#else
 void compute_flux (double *h, double *w, double *fluxx, double *fluxy) {
 
   int idxp,idxm;
@@ -440,28 +495,58 @@ void compute_flux (double *h, double *w, double *fluxx, double *fluxy) {
   }
 
 }  
+#endif /* if VOLUMETRIC_FLUXES */
 
-#ifdef SEEPAGE
-void compute_seepage (double *h, double *w) {
+
+void compute_seepage (double *h, double *w, double *s) {
 
   for(i=0;i<LX;i++) {
    for(j=0;j<LY;j++) {
 
      idx = j + i*LY;
 
+     s[idx] = 0.0;
+
+#ifdef SEEPAGE_CONSTANT
+     if(w[idx]>0.0) {
+       s[idx] = s0;
+     } else {
+       s[idx] = 0.0;
+     }
+#endif
+
+#ifdef SEEPAGE_DARCY
      if(h[idx]>hmin) {
       s[idx] = kappa*w[idx]/h[idx];
      } else {
        s[idx] = 0.0;
      }
+#endif
+     
+   }
+  }
+
+}
+
+#ifdef VOLUMETRIC_FLUXES
+void compute_wrhs (double *fR, double *Flux, double *s, double *wrhs) {
+
+  int idxp,idxm;
+  double dfluxx,dfluxy;
+  double div;
+
+  for(i=0;i<LX;i++) {
+   for(j=0;j<LY;j++) {
+
+     idx = j + i*LY;
+
+     wrhs[idx] = fR[idx] + Flux[idx] + s[idx];
 
    }
   }
 
 }
-#endif 
-
-
+#else
 void compute_wrhs (double *fR, double *fluxx, double *fluxy, double *s, double *wrhs) {
 
   int idxp,idxm;
@@ -493,6 +578,8 @@ void compute_wrhs (double *fR, double *fluxx, double *fluxy, double *s, double *
   }
 
 }
+#endif
+
 #endif /* ifdef melt ponds */
 
 void compute_psi (double *sigmax, double *sigmay, double *psi) {
@@ -571,19 +658,19 @@ void total_volume (int t, double *h, FILE *fvol) {
    fflush(fvol);
 }
 
-/*
-void stabiliser (double *h) {
 
-  int i;
+void stabiliser (double *h, double cutoff) {
 
-  for(i=3;i<=(L+2);i++) {
+  for(i=0;i<LX;i++) {
+   for(j=0;j<LY;j++) {
+     idx = j + i*LY;
+    if(h[idx]<cutoff) { h[idx] = cutoff; }
 
-    if(h[i]<cutoff) { h[i] = cutoff; }
-
+   }
   }
 
 }
-*/
+
  
 void print_f (int t, double *h, char basename[]) {
 
@@ -613,5 +700,7 @@ void copy_array (double *v1, double *v2, int N) {
   }
 
 }
+
+
 
 

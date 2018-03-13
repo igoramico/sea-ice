@@ -71,7 +71,7 @@ int main (int argc, char **argv) {
       LY = atoi(Parameters[i].value);
     }
 
-    if((strcmp("minimum_allowed_height",Parameters[i].name))==0) {
+    if((strcmp("minimum_allowed_ice_height",Parameters[i].name))==0) {
       hmin = atof(Parameters[i].value);
     }
 
@@ -160,7 +160,23 @@ int main (int argc, char **argv) {
     if((strcmp("base_file_name_pond_field",Parameters[i].name))==0) {
       strcpy(pondname,Parameters[i].value);
     }
-    
+
+    if((strcmp("minimum_allowed_water_level",Parameters[i].name))==0) {
+      wmin = atof(Parameters[i].value);
+    }
+
+    if((strcmp("melt_ponds_alpha1_flux",Parameters[i].name))==0) {
+      alpha1 = atof(Parameters[i].value);
+    }
+
+    if((strcmp("melt_ponds_alphad_lateral_drainage",Parameters[i].name))==0) {
+      alphad = atof(Parameters[i].value);
+    }
+
+    if((strcmp("melt_ponds_kappa_seepage",Parameters[i].name))==0) {
+      kappa = atof(Parameters[i].value);
+    }
+
 #endif
     
     if((strcmp("base_file_name_ice_field",Parameters[i].name))==0) {
@@ -186,22 +202,6 @@ int main (int argc, char **argv) {
       seed = atoi(Parameters[i].value);
     }
 
-#ifdef MELT_PONDS
-
-    if((strcmp("melt_ponds_alpha1_flux",Parameters[i].name))==0) {
-      alpha1 = atof(Parameters[i].value);
-    }
-
-    if((strcmp("melt_ponds_alphad_lateral_drainage",Parameters[i].name))==0) {
-      alphad = atof(Parameters[i].value);
-    }
-
-    if((strcmp("melt_ponds_kappa_seepage",Parameters[i].name))==0) {
-      kappa = atof(Parameters[i].value);
-    }
-
-#endif 
-
   }
 
   TOTSIZE = LX*LY;
@@ -222,9 +222,13 @@ int main (int argc, char **argv) {
   wrhs    = (double *)malloc(sizeof(double)*TOTSIZE);
   wrhsold = (double *)malloc(sizeof(double)*TOTSIZE);
 
+ #ifdef VOLUMETRIC_FLUXES 
+  Flux    = (double *)malloc(sizeof(double)*TOTSIZE);
+ #else
   fluxx   = (double *)malloc(sizeof(double)*TOTSIZE);
   fluxy   = (double *)malloc(sizeof(double)*TOTSIZE);
-
+ #endif
+  
   s       = (double *)malloc(sizeof(double)*TOTSIZE);
 #endif
   
@@ -300,12 +304,20 @@ int main (int argc, char **argv) {
     compute_hrhs(fR,psi,hrhs);
 
  #ifdef MELT_PONDS
+
+   #ifdef VOLUMETRIC_FLUXES
+    compute_flux(h,w,Flux);
+    compute_wrhs(fR,Flux,s,wrhs);
+   #else
     compute_flux(h,w,fluxx,fluxy);
+    compute_seepage(h,w,s);
     compute_wrhs(fR,fluxx,fluxy,s,wrhs);
+   #endif
     if(iter==0) {
       copy_array(wrhsold,wrhs,TOTSIZE);
     }    
     time_marching(w,wrhs,wrhsold);
+    //    stabiliser(w,wmin);
  #endif
     if(iter==0) {
       copy_array(hrhsold,hrhs,TOTSIZE);

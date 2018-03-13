@@ -30,8 +30,12 @@ double h0,eps;
 double *w;
 double *wrhs,*wrhsold;
 double *fluxx,*fluxy;
+double *Flux;
 double *s;
 double *tsx,*tsy;
+
+double s0;
+double wmin;
 
 double alpha1,alphad,kappa;
 double ts0x,ts0y;
