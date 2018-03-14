@@ -126,15 +126,15 @@ int main (int argc, char **argv) {
 #ifdef MELT_PONDS
     
     if((strcmp("melting_luethje_m",Parameters[i].name))==0) {
-      mluethje = atoi(Parameters[i].value);
+      mluethje = atof(Parameters[i].value);
     }
 
     if((strcmp("melting_luethje_mp",Parameters[i].name))==0) {
-      mpluethje = atoi(Parameters[i].value);
+      mpluethje = atof(Parameters[i].value);
     }
 
     if((strcmp("melting_luethje_wmax",Parameters[i].name))==0) {
-      wmaxfr = atoi(Parameters[i].value);
+      wmaxfr = atof(Parameters[i].value);
     }
     
     if((strcmp("meltwater_flux_alpha1",Parameters[i].name))==0) {
@@ -142,19 +142,23 @@ int main (int argc, char **argv) {
     }
 
     if((strcmp("meltwater_flux_wind_x",Parameters[i].name))==0) {
-      ts0x = atoi(Parameters[i].value);
+      ts0x = atof(Parameters[i].value);
     }
 
     if((strcmp("meltwater_flux_wind_y",Parameters[i].name))==0) {
-      ts0y = atoi(Parameters[i].value);
+      ts0y = atof(Parameters[i].value);
     }
 
     if((strcmp("vertical_seepage_rate_kappa",Parameters[i].name))==0) {
-      kappa = atoi(Parameters[i].value);
+      kappa = atof(Parameters[i].value);
+    }
+
+    if((strcmp("vertical_seepage_rate_s0",Parameters[i].name))==0) {
+      s0 = atof(Parameters[i].value);
     }
 
     if((strcmp("lateral_drainage_rate_alphad",Parameters[i].name))==0) {
-      alphad = atoi(Parameters[i].value);
+      alphad = atof(Parameters[i].value);
     }
 
     if((strcmp("base_file_name_pond_field",Parameters[i].name))==0) {
@@ -317,7 +321,7 @@ int main (int argc, char **argv) {
       copy_array(wrhsold,wrhs,TOTSIZE);
     }    
     time_marching(w,wrhs,wrhsold);
-    //    stabiliser(w,wmin);
+    stabiliser(w,wmin);
  #endif
     if(iter==0) {
       copy_array(hrhsold,hrhs,TOTSIZE);

@@ -5,11 +5,12 @@ time_step 0.001
 iterations 100000
 mechanical_noise_amplitude 0.0
 meltwater_flux_alpha1 0.0
-melting_luethje_m 0.008333
+melting_luethje_m 0.0083
 melting_luethje_mp 0.014
+melting_luethje_wmax 0.1 
 minimum_allowed_water_level 0.0
-vertical_seepage_rate_kappa 0.0
-lateral_drainage_rate_alphad 0.0 
+vertical_seepage_rate_s0 0.0055
+lateral_drainage_rate_alphad 0.016 
 dump_frequency 100
 volume_check_frequency 100
 base_file_name_ice_field h

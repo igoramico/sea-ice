@@ -124,7 +124,7 @@ void initialisation (double *h, double *w) {
 
 #ifdef INIT_ICE_FROM_FILE
 
-    sprintf("init_ice_topography.inp",fname);
+    sprintf(fname,"init_ice_topography.inp");
     finp = fopen(fname,"r");
     if(finp==NULL) {
       fprintf(stderr,"Error! Initial topography file %s not found!! \n",fname);
@@ -277,16 +277,16 @@ void compute_fR (double *h, double *w, double *fR) {
   for(i=0;i<LX;i++) {
    for(j=0;j<LY;j++) {
      idx = j + i*LY;
-     if(h[idx]>hmin) {
-      if(mluethje!=0.0) {
-       if(w[idx]<wmaxfr) {
- 	fR[idx] = (1.0 + mpluethje/mluethje*w[idx]/wmaxfr)*mluethje; 
+     if((h[idx]>hmin)&&(mluethje!=0.0)) {
+       if(w[idx]>0.0) { 
+	 if(w[idx]<wmaxfr) {
+ 	  fR[idx] = (1.0 + mpluethje/mluethje*w[idx]/wmaxfr)*mluethje; 
+         } else {
+	  fR[idx] = (1.0 + mpluethje/mluethje)*mluethje; 
+         }
        } else {
-	fR[idx] = (1.0 + mpluethje/mluethje)*mluethje; 
-       }
-      } else {
 	fR[idx] = mluethje;
-      }
+       }
      } else {
       fR[idx]=0.0;
      }
