@@ -1,6 +1,7 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <math.h>
+#include <string.h>
 
 int main (int argc, char **argv) {
 
@@ -13,20 +14,38 @@ int main (int argc, char **argv) {
   FILE *fin;
   
   if(argc!=6) {
-    fprintf(stderr,"Error! Usage is: %s <LX> <LY> <max> <min> <BIN> \n",argv[0]);
+    fprintf(stderr,"Error! Usage is: %s <start time> <end time> <time step> <LX> <LY> <BIN> \n",argv[0]);
     exit(2);
   }
 
   LX  = atoi(argv[1]);
   LY  = atoi(argv[2]);
-  max = atof(argv[3]);
-  min = atof(argv[4]);
   BIN = atoi(argv[5]);
 
-  max *= 1.1;
-  min /= 1.1;
-  
-  delta = (max - min)/((double)BIN);
+
+  for(it=STIME;it<=ETIME;it+=TSTEP) {
+
+#ifdef MELT_PONDS    
+    sprintf(fname,"%s/%s_%s_t%d.dat",path,icename,pondname,it); 
+#else
+    sprintf(fname,"%s/%s_t%d.dat",path,icename,it); 
+#endif
+
+    fin = fopen(fname,"r");
+    
+    for(i=0;i<LX;i++) {
+     for(j=0;j<LY;j++) {
+       idx = j + i*LY;
+
+       fscanf(fin," %d %d %lf %lf \n",&idum,&idum,h[idx],w[idx]);
+       if(h[idx]>hmax) {
+	 hmax = h[idx];
+       }
+       if(h[idx]<hmin) {
+	 hmin = h[idx];
+       }
+       
+   delta = (max - min)/((double)BIN);
 
   fin = fopen("init_ice_topography.inp","r");
   
