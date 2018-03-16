@@ -272,9 +272,10 @@ int main (int argc, char **argv) {
   for(iter=start_time;iter<=(start_time+NTIME);iter++) {
 
    if((iter%printfreq)==0) {
-     print_f(iter,h,icename);
 #ifdef MELT_PONDS
-     print_f(iter,w,pondname);
+     print_f(iter,h,w,icename,pondname);
+#else
+     print_f(iter,h,icename);     
 #endif
    }
 

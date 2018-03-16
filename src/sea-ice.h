@@ -671,7 +671,29 @@ void stabiliser (double *h, double cutoff) {
 
 }
 
- 
+
+#ifdef MELT_PONDS
+void print_f (int t, double *h, double *w, char icebasename[], char pondbasename[]) {
+
+  FILE *fout;
+  char filename[500];
+
+  sprintf(filename,"%s/%s_%s_t%d.dat",OutDir,icebasename,pondbasename,t);
+  fout = fopen(filename,"w");
+  if(fout==NULL) { fprintf(stderr,"Error! File %s could not be opened! \n",filename); exit(2); }
+  
+  for(i=0;i<LX;i++) {
+   for(j=0;j<LY;j++) {
+     idx = j + i*LY;
+     fprintf(fout," %g %g %g %g \n",((double)i),((double)j),h[idx],w[idx]);
+   }
+   fprintf(fout,"\n");
+  }
+
+  fclose(fout);
+
+}
+#else
 void print_f (int t, double *h, char basename[]) {
 
   FILE *fout;
@@ -692,6 +714,7 @@ void print_f (int t, double *h, char basename[]) {
   fclose(fout);
 
 }
+#endif
 
 void copy_array (double *v1, double *v2, int N) {
 
