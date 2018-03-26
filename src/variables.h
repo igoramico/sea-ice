@@ -9,7 +9,7 @@ int printfreq,volfreq,dumpfreq;
 int restore;
 int start_time;
 
-double dt;
+double dt,dx;
 
 double *h;
 double *hrhs,*hrhsold;

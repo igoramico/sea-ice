@@ -414,30 +414,30 @@ void compute_flux (double *h, double *w, double *Flux) {
      idxmy = jm + i*LY;
 
      wm  = 0.5 * (w[idxpx] + w[idx]);
-     Jpx = alpha1 * wm * wm * (w[idxpx] + h[idxpx] - w[idx] - h[idx]); 
+     Jpx = alpha1 * wm * wm * wm * (w[idxpx] + h[idxpx] - w[idx] - h[idx]); 
 #ifdef WIND_SHEAR 
      Jpx -= tsx[idx]*wm; 
 #endif 
 
      wm  = 0.5 * (w[idxpy] + w[idx]);
-     Jpy = alpha1 * wm * wm * (w[idxpy] + h[idxpy] - w[idx] - h[idx]); 
+     Jpy = alpha1 * wm * wm * wm * (w[idxpy] + h[idxpy] - w[idx] - h[idx]); 
 #ifdef WIND_SHEAR 
      Jpy -= tsy[idx]*wm; 
 #endif 
 
      wm  = 0.5 * (w[idxmy] + w[idx]);
-     Jmy = alpha1 * wm * wm * (w[idxmy] + h[idxmy] - w[idx] - h[idx]); 
+     Jmy = alpha1 * wm * wm * wm * (w[idxmy] + h[idxmy] - w[idx] - h[idx]); 
 #ifdef WIND_SHEAR 
      Jmy += tsy[idx]*wm; 
 #endif 
 
      wm  = 0.5 * (w[idxmx] + w[idx]);
-     Jmx = alpha1 * wm * wm * (w[idxmx] + h[idxmx] - w[idx] - h[idx]); 
+     Jmx = alpha1 * wm * wm * wm * (w[idxmx] + h[idxmx] - w[idx] - h[idx]); 
 #ifdef WIND_SHEAR 
      Jmx += tsx[idx]*wm; 
 #endif 
      
-     Flux[idx] = Jpx + Jpy + Jmx + Jmy;
+     Flux[idx] = (Jpx + Jpy + Jmx + Jmy)/dx;
      
    }
   }

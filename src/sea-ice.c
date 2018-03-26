@@ -91,6 +91,10 @@ int main (int argc, char **argv) {
       dt = atof(Parameters[i].value);
     }
 
+    if((strcmp("grid_spacing",Parameters[i].name))==0) {
+      dx = atof(Parameters[i].value);
+    }
+    
     if((strcmp("k_min_mode",Parameters[i].name))==0) {
       KMIN = atoi(Parameters[i].value);
     }
