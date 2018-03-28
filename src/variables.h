@@ -43,6 +43,10 @@ double ts0x,ts0y;
 double mluethje,mpluethje,wmaxfr;
 #endif
 
+#ifdef TEMPERATURE_FIELD
+double *t;
+#endif
+
 char basename[500],OutDir[500];
 char icename[500],pondname[500];
 char fname[500];
