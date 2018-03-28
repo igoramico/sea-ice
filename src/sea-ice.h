@@ -263,6 +263,10 @@ void bc (double *h) {
 }
 */
 
+#ifdef TEMPERATURE_FIELD
+
+#endif
+
 #ifdef MELT_PONDS
 void compute_fR (double *h, double *w, double *fR) {
 
