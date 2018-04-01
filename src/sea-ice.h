@@ -282,12 +282,16 @@ void compute_fR (double *h, double *w, double *fR) {
    for(j=0;j<LY;j++) {
      idx = j + i*LY;
      if((h[idx]>hmin)&&(mluethje!=0.0)) {
-       if(w[idx]>0.0) { 
+       if(w[idx]>0.0) {
+#ifdef MELTING_LUETHJE_TWO_SEVENTH
+	 fR[idx] = (1.0 + mpluethje/mluethje*pow((wmaxfr/w[idx]),(1./7.)))*mluethje; 
+#else
 	 if(w[idx]<wmaxfr) {
  	  fR[idx] = (1.0 + mpluethje/mluethje*w[idx]/wmaxfr)*mluethje; 
          } else {
 	  fR[idx] = (1.0 + mpluethje/mluethje)*mluethje; 
          }
+#endif
        } else {
 	fR[idx] = mluethje;
        }
@@ -323,7 +327,23 @@ void compute_fR (double *h, double *fR) {
 #endif
   
 }
+
+#ifdef MELT_PONDS_SUPERSEEPER
+void melt_ponds_superseeper (double *w) {
+
+  for(i=0;i<LX;i++) {
+   for(j=0;j<LY;j++) {
+     idx = j + i*LY;
+     if(w[idx]<wmin) {
+       w[idx] = 0.0;
+     }
+   }
+  }
+
+}
 #endif
+
+#endif /* endif MELT_PONDS */
 
 /* 
 #ifdef MELT_PONDS
