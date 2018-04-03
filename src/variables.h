@@ -35,7 +35,9 @@ double *s;
 double *tsx,*tsy;
 
 double s0;
-double wmin;
+double wmin,wmin_melt,wminss;
+
+int freq_super_seeper;
 
 double alpha1,alphad,kappa;
 double ts0x,ts0y;

@@ -173,6 +173,22 @@ int main (int argc, char **argv) {
       wmin = atof(Parameters[i].value);
     }
 
+    if((strcmp("minimum_allowed_water_level_for_melting",Parameters[i].name))==0) {
+      wmin_melt = atof(Parameters[i].value);
+    }
+
+    if((strcmp("water_level_super_seeper",Parameters[i].name))==0) {
+      wminss = atof(Parameters[i].value);
+    }
+
+    if((strcmp("frequency_super_seeper",Parameters[i].name))==0) {
+      freq_super_seeper = atoi(Parameters[i].value);
+    }
+   
+    if((strcmp("minimum_water_level_super_seeper",Parameters[i].name))==0) {
+      wmin = atof(Parameters[i].value);
+    }
+    
     if((strcmp("melt_ponds_alpha1_flux",Parameters[i].name))==0) {
       alpha1 = atof(Parameters[i].value);
     }
@@ -327,7 +343,15 @@ int main (int argc, char **argv) {
     }    
     time_marching(w,wrhs,wrhsold);
     stabiliser(w,wmin);
- #endif
+
+    #ifdef MELT_PONDS_SUPERSEEPER
+    if((iter%freq_super_seeper)==0) {
+      melt_ponds_superseeper(w,wminss);
+    }
+    #endif 
+    
+#endif /* endif melt ponds */
+    
     if(iter==0) {
       copy_array(hrhsold,hrhs,TOTSIZE);
     }    

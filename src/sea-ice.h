@@ -270,6 +270,16 @@ void bc (double *h) {
 #ifdef MELT_PONDS
 void compute_fR (double *h, double *w, double *fR) {
 
+  double meltrate;
+  
+#ifdef MELTING_LATERAL  
+  int idxpx,idxmx;
+  int idxpy,idxmy;
+  double dwx,dwy;
+  double normal;
+  double fVert,fLongX,fLongY;
+#endif
+  
   for(i=0;i<LX;i++) {
    for(j=0;j<LY;j++) {
      idx = j + i*LY;
@@ -282,16 +292,62 @@ void compute_fR (double *h, double *w, double *fR) {
    for(j=0;j<LY;j++) {
      idx = j + i*LY;
      if((h[idx]>hmin)&&(mluethje!=0.0)) {
-       if(w[idx]>0.0) {
+       if(w[idx]>wmin_melt) {
+
 #ifdef MELTING_LUETHJE_TWO_SEVENTH
-	 fR[idx] = (1.0 + mpluethje/mluethje*pow((wmaxfr/w[idx]),(1./7.)))*mluethje; 
+         meltrate = (1.0 + mpluethje/mluethje*pow((wmaxfr/w[idx]),(1./7.)))*mluethje;
 #else
 	 if(w[idx]<wmaxfr) {
- 	  fR[idx] = (1.0 + mpluethje/mluethje*w[idx]/wmaxfr)*mluethje; 
+           meltrate = (1.0 + mpluethje/mluethje*w[idx]/wmaxfr)*mluethje;
          } else {
-	  fR[idx] = (1.0 + mpluethje/mluethje)*mluethje; 
+	   meltrate = (1.0 + mpluethje/mluethje)*mluethje;
          }
-#endif
+
+#ifdef MELTING_LATERAL
+
+     ip = (i + 1 + LX)%LX;
+     im = (i - 1 + LX)%LX;
+     idxpx = j + ip*LY;
+     idxmx = j + im*LY;
+
+     jp = (j + 1 + LY)%LY;
+     jm = (j - 1 + LY)%LY;
+     idxpy = jp + i*LY;
+     idxmy = jm + i*LY;
+    
+     dwx = 0.5*(w[idxpx] - w[idxmx])/dx;
+     dwy = 0.5*(w[idxpy] - w[idxmy])/dx;
+    
+     normal = sqrt(1.0 + dwx*dwx + dwy*dwy);
+     fVert  = 1.0/normal;
+     fLongX = fabs(dwx)/normal;
+     fLongY = fabs(dwy)/normal;
+
+     fR[idx] += fVert*meltrate;
+
+     if(h[idxpx] > h[idx]) {
+       fR[idxpx] += fLongX*meltrate;
+     }
+     if(h[idxmx] > h[idx]) {
+       fR[idxmx] += fLongX*meltrate;
+     }
+
+     if(h[idxpy] > h[idx]) {
+       fR[idxpy] += fLongY*meltrate;
+     }
+     if(h[idxmy] > h[idx]) {
+       fR[idxmy] += fLongY*meltrate;
+     }
+     
+#else
+
+     fR[idx] = meltrate;
+     
+#endif /* ifdef melting_lateral */     
+	 
+	 
+#endif /* ifdef meltig_luethje_two_seventh */
+
        } else {
 	fR[idx] = mluethje;
        }
@@ -328,20 +384,6 @@ void compute_fR (double *h, double *fR) {
   
 }
 
-#ifdef MELT_PONDS_SUPERSEEPER
-void melt_ponds_superseeper (double *w) {
-
-  for(i=0;i<LX;i++) {
-   for(j=0;j<LY;j++) {
-     idx = j + i*LY;
-     if(w[idx]<wmin) {
-       w[idx] = 0.0;
-     }
-   }
-  }
-
-}
-#endif
 
 #endif /* endif MELT_PONDS */
 
@@ -484,8 +526,8 @@ void compute_flux (double *h, double *w, double *fluxx, double *fluxy) {
      idxp = j + ip*LY;
      idxm = j + im*LY;
 
-     dhx = 0.5*(h[idxp] - h[idxm]);
-     dwx = 0.5*(w[idxp] - w[idxm]);
+     dhx = 0.5*(h[idxp] - h[idxm])/dx;
+     dwx = 0.5*(w[idxp] - w[idxm])/dx;
 
      fluxx[idx] = -alpha1*w[idx]*w[idx]*(dhx + dwx);
 
@@ -502,8 +544,8 @@ void compute_flux (double *h, double *w, double *fluxx, double *fluxy) {
      idxp = jp + i*LY;
      idxm = jm + i*LY;
 
-     dhy = 0.5*(h[idxp] - h[idxm]);
-     dwy = 0.5*(w[idxp] - w[idxm]);
+     dhy = 0.5*(h[idxp] - h[idxm])/dx;
+     dwy = 0.5*(w[idxp] - w[idxm])/dx;
 
      fluxy[idx] = -alpha1*w[idx]*w[idx]*(dhy + dwy);  
 
@@ -552,6 +594,23 @@ void compute_seepage (double *h, double *w, double *s) {
 
 }
 
+#ifdef MELT_PONDS_SUPERSEEPER
+
+void melt_ponds_superseeper(double *w, double wminss) {
+
+    
+  for(i=0;i<LX;i++) {
+   for(j=0;j<LY;j++) {
+     idx = j + i*LY;
+     if(w[idx]<wminss) {
+       w[idx] = 0.0;
+     }
+   }
+  }
+
+}
+#endif
+
 #ifdef VOLUMETRIC_FLUXES
 void compute_wrhs (double *fR, double *Flux, double *s, double *wrhs) {
 
@@ -587,14 +646,14 @@ void compute_wrhs (double *fR, double *fluxx, double *fluxy, double *s, double *
      idxp = j + ip*LY;
      idxm = j + im*LY;
 
-     dfluxx = 0.5*(fluxx[idxp] - fluxx[idxm]);
+     dfluxx = 0.5*(fluxx[idxp] - fluxx[idxm])/dx;
 
      jp = (j + 1 + LY)%LY;
      jm = (j - 1 + LY)%LY;
      idxp = jp + i*LY;
      idxm = jm + i*LY;
 
-     dfluxy = 0.5*(fluxy[idxp] - fluxy[idxm]);
+     dfluxy = 0.5*(fluxy[idxp] - fluxy[idxm])/dx;
 
      div = dfluxx + dfluxy;
      wrhs[idx] = fR[idx] - div + s[idx];
@@ -619,13 +678,13 @@ void compute_psi (double *sigmax, double *sigmay, double *psi) {
      im = (i - 1 + LX)%LX;
      idxp = j + ip*LY;
      idxm = j + im*LY;
-     dsxdx = 0.5 * (sigmax[idxp] - sigmax[idxm]);
+     dsxdx = 0.5 * (sigmax[idxp] - sigmax[idxm])/dx;
 
      jp = (j + 1 + LY)%LY;
      jm = (j - 1 + LY)%LY;
      idxp = jp + i*LY;
      idxm = jm + i*LY;
-     dsydy = 0.5 * (sigmay[idxp] - sigmay[idxm]);
+     dsydy = 0.5 * (sigmay[idxp] - sigmay[idxm])/dx;
 
 
      psi[idx] = dsxdx + dsydy;
