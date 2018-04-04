@@ -145,14 +145,22 @@ int main (int argc, char **argv) {
       alpha1 = atof(Parameters[i].value);
     }
 
-    if((strcmp("meltwater_flux_wind_x",Parameters[i].name))==0) {
+    if((strcmp("wind_x",Parameters[i].name))==0) {
       ts0x = atof(Parameters[i].value);
     }
 
-    if((strcmp("meltwater_flux_wind_y",Parameters[i].name))==0) {
+    if((strcmp("wind_y",Parameters[i].name))==0) {
       ts0y = atof(Parameters[i].value);
     }
 
+    if((strcmp("melting_luethje_wind_shear",Parameters[i].name))==0) {
+      ws_luethje = atof(Parameters[i].value);
+    }
+
+     if((strcmp("melting_luethje_maximum_depth_wind_shear",Parameters[i].name))==0) {
+      WWSmax = atof(Parameters[i].value);
+    }
+   
     if((strcmp("vertical_seepage_rate_kappa",Parameters[i].name))==0) {
       kappa = atof(Parameters[i].value);
     }

@@ -270,7 +270,7 @@ void bc (double *h) {
 #ifdef MELT_PONDS
 void compute_fR (double *h, double *w, double *fR) {
 
-  double meltrate;
+  double meltrate,meltenh;
   
 #ifdef MELTING_LATERAL  
   int idxpx,idxmx;
@@ -294,15 +294,30 @@ void compute_fR (double *h, double *w, double *fR) {
      if((h[idx]>hmin)&&(mluethje!=0.0)) {
        if(w[idx]>wmin_melt) {
 
+#ifdef MELTING_WIND_SHEAR
+	 
+	 tsmod = sqrt(ts0x*ts0x + ts0y*ts0y);
+	 mpluethje *= (1.0/(1.0 + ws_luethje*pow(tsmod,(3./4.))*pow(w[idx],(7./4.)))
+		       + ws_luethje*tsmod*(w[idx]/WWSmax)*(w[idx]/WWSmax));
+
+#endif	 
+	 
 #ifdef MELTING_LUETHJE_TWO_SEVENTH
-         meltrate = (1.0 + mpluethje/mluethje*pow((wmaxfr/w[idx]),(1./7.)))*mluethje;
+
+         meltenh = (1.0 + mpluethje/mluethje*pow((wmaxfr/w[idx]),(1./7.)));
+
 #else
+
 	 if(w[idx]<wmaxfr) {
-           meltrate = (1.0 + mpluethje/mluethje*w[idx]/wmaxfr)*mluethje;
+           meltenh = (1.0 + mpluethje/mluethje*w[idx]/wmaxfr);
          } else {
-	   meltrate = (1.0 + mpluethje/mluethje)*mluethje;
+	   meltenh = (1.0 + mpluethje/mluethje);
          }
 
+         meltrate = meltenh*mluethje;
+
+#endif /* ifdef melting_luethje_two_seventh */
+	 	 
 #ifdef MELTING_LATERAL
 
      ip = (i + 1 + LX)%LX;
@@ -344,9 +359,6 @@ void compute_fR (double *h, double *w, double *fR) {
      fR[idx] = meltrate;
      
 #endif /* ifdef melting_lateral */     
-	 
-	 
-#endif /* ifdef meltig_luethje_two_seventh */
 
        } else {
 	fR[idx] = mluethje;
@@ -535,8 +547,8 @@ void compute_flux (double *h, double *w, double *fluxx, double *fluxy) {
      fluxx[idx] += tsx[idx]*w[idx];
 #endif 
 
-#ifdef LATERAL_DRAINAGE 
-     fluxx[idx] += -alphad*(dhx + dwx);
+#ifdef LATERAL_DRAINAGE
+     fluxx[idx] += -alphad * w[idx] * (dhx + dwx);
 #endif 
 
      jp = (j + 1 + LY)%LY;
@@ -554,7 +566,7 @@ void compute_flux (double *h, double *w, double *fluxx, double *fluxy) {
 #endif 
 
 #ifdef LATERAL_DRAINAGE 
-     fluxy[idx] += -alphad*(dhy + dwy);
+     fluxy[idx] += -alphad * w[idx] * (dhy + dwy);
 #endif 
  
        }

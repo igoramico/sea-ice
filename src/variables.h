@@ -27,6 +27,7 @@ int kk,KMIN,KMAX;
 double h0,eps;
 
 #ifdef MELT_PONDS
+
 double *w;
 double *wrhs,*wrhsold;
 double *fluxx,*fluxy;
@@ -40,13 +41,19 @@ double wmin,wmin_melt,wminss;
 int freq_super_seeper;
 
 double alpha1,alphad,kappa;
-double ts0x,ts0y;
+double ts0x,ts0y,tsmod;
 
 double mluethje,mpluethje,wmaxfr;
+double ws_luethje;
+
+double WWSmax;
+
 #endif
 
 #ifdef TEMPERATURE_FIELD
+
 double *t;
+
 #endif
 
 char basename[500],OutDir[500];
